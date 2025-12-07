@@ -11,7 +11,7 @@ interface GameState extends Config {
   //resetGame: () => void;
 }
 
-export const configuracionTipos = create<GameState>((set) => ({
+export const ConfiguracionTipos = create<GameState>((set) => ({
   tamanio: 5,
   trail: 2,
   difficult: "Facil",

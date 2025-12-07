@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View, Button, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { configuracionTipos, Config } from "../components/ConfiguracionTipos";
+import { ConfiguracionTipos, Config } from "../components/ConfiguracionTipos";
 import { Level } from "../components/EstrategiaLevels";
 
-const config = () => {
+const ConfigScreen = () => {
   const navigation = useNavigation<any>();
-  const setGlobalConfig = configuracionTipos((state) => state.setConfig);
+  const setGlobalConfig = ConfiguracionTipos((state) => state.setConfig);
 
   const [localConfig, setLocalConfig] = useState<Config>(
     Level.getInstance().crearLevel("Facil")
@@ -18,27 +18,21 @@ const config = () => {
   };
 
   const startGame = () => {
-    // Guardamos la configuración en el estado global (Zustand)
     setGlobalConfig(localConfig);
-    // Navegamos a la pantalla de juego
-    navigation.navigate("Game");
+    navigation.navigate("JuegoScreen");
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>CONFIGURACIÓN</Text>
-
-      {/* Sección de Selección de Dificultad */}
       <View style={styles.section}>
         <Text style={styles.label}>Selecciona Dificultad:</Text>
-
         <View style={styles.buttonsContainer}>
           {(["Facil", "Intermedio", "Dificil"] as const).map((nivel) => (
             <TouchableOpacity
               key={nivel}
               style={[
                 styles.levelButton,
-                // Cambia el color si es la opción seleccionada
                 localConfig.difficult === nivel && styles.selectedButton,
               ]}
               onPress={() => botonPrestablecido(nivel)}
@@ -55,8 +49,6 @@ const config = () => {
           ))}
         </View>
       </View>
-
-      {/* Sección de Información (Muestra los datos de la estrategia seleccionada) */}
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Resumen del Nivel</Text>
         <Text style={styles.infoText}>
@@ -66,8 +58,6 @@ const config = () => {
           👀 Rastro Visible: {localConfig.trail} casillas
         </Text>
       </View>
-
-      {/* Botón de Inicio */}
       <TouchableOpacity style={styles.startButton} onPress={startGame}>
         <Text style={styles.startText}>JUGAR</Text>
       </TouchableOpacity>
@@ -75,7 +65,7 @@ const config = () => {
   );
 };
 
-export default config;
+export default ConfigScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -115,7 +105,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
   selectedButton: {
-    backgroundColor: "#007AFF", // Azul cuando está seleccionado
+    backgroundColor: "#007AFF",
     borderColor: "#0056b3",
   },
   buttonText: {
@@ -124,15 +114,15 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   selectedText: {
-    color: "white", // Texto blanco al seleccionar
+    color: "white",
   },
   infoCard: {
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
     marginBottom: 40,
-    elevation: 3, // Sombra en Android
-    shadowColor: "#000", // Sombra en iOS
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -151,7 +141,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   startButton: {
-    backgroundColor: "#28a745", // Verde
+    backgroundColor: "#28a745",
     padding: 15,
     borderRadius: 30,
     alignItems: "center",

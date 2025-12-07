@@ -1,76 +1,71 @@
 import { Asset } from "expo-asset";
-import { GLTFLoader } from "three-stdlib";
 import * as THREE from "three";
+import { GLTFLoader } from "three-stdlib";
 
 export class Submarine {
-  public mesh: THREE.Group | any = null;
+  public mesh: THREE.Group | null = null;
   private scene: THREE.Scene;
-  private modelAsset: any;
-  static current: Submarine;
+  private localUri: any;
+  static current: Submarine | null = null;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
-    // Referencia a tu archivo
-    this.modelAsset = Asset.fromModule(require("../assets/submarine.glb"));
+    this.localUri = require("../assets/submarine.glb");
   }
 
-  // Método para iniciar la carga
-  async loadAsync() {
-    try {
-      // 1. Asegurar que el asset existe en el sistema
-      const asset = Asset.fromModule(this.modelAsset);
-      await asset.downloadAsync();
-
-      // 2. Cargar el modelo
+  async loadAsync(): Promise<void> {
+    // 1. Descargar el asset al sistema de archivos del móvil
+    const asset = Asset.fromModule(this.localUri);
+    await asset.downloadAsync();
+    // 2. Retornamos una promesa que no se resuelve hasta que Three.js termine
+    return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
+
       loader.load(
         asset.uri || "",
-        (gltf: { scene: THREE.Group<THREE.Object3DEventMap> | null }) => {
+        (gltf) => {
           this.mesh = gltf.scene;
 
-          // Configuración inicial del submarino
-          //this.mesh.rotation.x = Math.PI / 2;
-          this.mesh.scale.set(10, 10, 10); // Ajusta la escala
-          this.mesh.position.set(0, 0, 0); // Posición inicial
+          // Configuración inicial
+          this.mesh.scale.set(10, 10, 10);
+          this.mesh.position.set(0, 0, 0);
 
+          // Aplicar materiales
           this.mesh.traverse((child: any) => {
             if (child.isMesh) {
-              // Le creamos un "traje" nuevo de color amarillo plástico
               child.material = new THREE.MeshStandardMaterial({
-                color: 0xffd700, // Color Oro/Amarillo (Hexadecimal)
-                roughness: 0.4, // 0 es espejo, 1 es mate. 0.4 es plástico brillante.
-                metalness: 0.3, // Un poco metálico
+                color: 0xffd700, // Amarillo Submarino
+                roughness: 0.4,
+                metalness: 0.3,
               });
-
               child.castShadow = true;
               child.receiveShadow = true;
             }
           });
 
-          // Añadir a la escena automáticamente al terminar de cargar
           this.scene.add(this.mesh);
-          console.log("Submarino añadido a la escena");
+          console.log("✅ Submarino cargado y añadido");
+          resolve(); // ¡Avisamos que ya terminó!
         },
-        undefined,
-        (error: any) => console.error("Error cargando submarino:", error)
+        undefined, // onProgress
+        (error) => {
+          console.error("❌ Error cargando modelo GLB:", error);
+          reject(error);
+        }
       );
-    } catch (e) {
-      console.error("Error en sistema de assets:", e);
-    }
+    });
   }
 
-  // Método para mover el submarino (lo llamaremos en el loop de renderizado)
   update() {
     if (this.mesh) {
-      // Ejemplo: Animación suave de flotación
-      this.mesh.position.y = 25 + Math.sin(Date.now() * 0.002) * 2;
-
-      // Aquí pondrás la lógica para moverlo por la cuadrícula más adelante
-      // this.mesh.position.x += ...
+      // Animación suave de flotación
+      const time = Date.now() * 0.002;
+      this.mesh.position.y = Math.sin(time) * 5; // Flota entre -5 y 5
+      // Rotación suave para ver que está vivo
+      this.mesh.rotation.y += 0.005;
     }
   }
 
-  // Método helper para moverlo desde fuera
   setPosition(x: number, y: number, z: number) {
     if (this.mesh) this.mesh.position.set(x, y, z);
   }

@@ -52,10 +52,13 @@ export class Level {
     switch (type) {
       case "Facil":
         strategy = new FacilStrategy();
+        break;
       case "Intermedio":
         strategy = new IntermedioStrategy();
+        break;
       case "Dificil":
         strategy = new DificilStrategy();
+        break;
       default:
         "Error al elegir configuración";
     }

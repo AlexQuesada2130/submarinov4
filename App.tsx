@@ -3,15 +3,22 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import ConfigScreen from "./screens/ConfigScreen";
 import JuegoScreen from "./screens/JuegoScreen";
+import { useAssets } from "expo-asset";
+import { ActivityIndicator, View } from "react-native";
 
 const Stack = createStackNavigator();
 
-export type RootStackParamList = {
-  Config: undefined;
-  Game: undefined;
-};
-
 export default function App() {
+  const [assets] = useAssets([require("./assets/submarine.glb")]);
+
+  if (!assets) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Config">
@@ -24,7 +31,7 @@ export default function App() {
           }}
         />
         <Stack.Screen
-          name="Game"
+          name="JuegoScreen"
           component={JuegoScreen}
           options={{
             headerShown: false,
