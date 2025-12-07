@@ -2,7 +2,7 @@ import { GLView } from "expo-gl";
 import { StatusBar } from "expo-status-bar";
 import { Renderer, THREE } from "expo-three";
 import { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 import {
   Gesture,
   GestureDetector,
@@ -16,15 +16,19 @@ import { Submarine } from "../components/submarine";
 
 interface RotatingCube {
   object: THREE.Object3D;
-  progress: number; // 0 a 1, controla animación
+  progress: number;
   originalRotation: THREE.Euler;
 }
 
-export default function App() {
+export default function JuegoScreen() {
   const [total, setTotal] = useState(0);
   const cameraRef = useRef<THREE.PerspectiveCamera | any>(null);
   const clickableObjectsRef = useRef<THREE.Object3D[]>([]);
   const rotatingCubesRef = useRef<RotatingCube[]>([]);
+
+  // Obtenemos las dimensiones reales de la pantalla
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
+    Dimensions.get("window");
 
   const panGesture = Gesture.Pan().onUpdate(
     (event: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
@@ -40,8 +44,13 @@ export default function App() {
     (event: GestureUpdateEvent<TapGestureHandlerEventPayload>) => {
       const camera = cameraRef.current;
       const { absoluteX, absoluteY } = event;
-      const x = (absoluteX / window.innerWidth) * 2 - 1;
-      const y = -(absoluteY / window.innerHeight) * 2 + 1;
+
+      // ---------------------------------------------------------
+      // 1. CORRECCIÓN DE COORDENADAS (Dimensions vs window)
+      // ---------------------------------------------------------
+      // Usamos SCREEN_WIDTH/HEIGHT porque 'window' no es fiable en nativo
+      const x = (absoluteX / SCREEN_WIDTH) * 2 - 1; // <--- CAMBIO AQUI (Usamos variable correcta)
+      const y = -(absoluteY / SCREEN_HEIGHT) * 2 + 1; // <--- CAMBIO AQUI (Usamos variable correcta)
 
       const pointerVector = new THREE.Vector2(x, y);
       const raycaster = new THREE.Raycaster();
@@ -55,7 +64,6 @@ export default function App() {
         setTotal(total + 1);
         const firstIntersectedObject = intersects[0].object;
 
-        //Casteamos los metodos mesh para forzar el uso estricto que nos pide material
         const mesh = firstIntersectedObject as THREE.Mesh;
         (mesh.material as THREE.MeshBasicMaterial).color.set(0xff0000);
 
@@ -84,12 +92,20 @@ export default function App() {
         <GLView
           style={{ flex: 1 }}
           onContextCreate={async (gl) => {
-            const renderer = new Renderer({ gl }) as any;
+            // ---------------------------------------------------------
+            // 2. CAMBIO DE RENDERER (THREE.WebGLRenderer)
+            // ---------------------------------------------------------
+            // Usamos el renderer nativo de Three.js pasando el contexto 'gl'
+            const renderer = new THREE.WebGLRenderer({ context: gl }); // <--- CAMBIO AQUI (Renderer nativo)
+
             renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+
+            // Opcional: Evitamos que intente acceder al DOM al desmontar
+            renderer.dispose = () => {};
 
             const camera = new THREE.PerspectiveCamera(
               45,
-              window.innerWidth / window.innerHeight,
+              gl.drawingBufferWidth / gl.drawingBufferHeight, // <--- CAMBIO AQUI (Mejor usar drawingBuffer para aspecto)
               1,
               10000
             );
@@ -144,7 +160,7 @@ export default function App() {
                   cube.object.rotation.y =
                     cube.originalRotation.y + Math.PI * cube.progress * 2;
                 } else if (cube.progress <= 1) {
-                  const t = (cube.progress - 0.5) * 2; // 0 → 1
+                  const t = (cube.progress - 0.5) * 2;
                   cube.object.rotation.y = THREE.MathUtils.lerp(
                     cube.originalRotation.y + Math.PI,
                     cube.originalRotation.y,
@@ -155,8 +171,9 @@ export default function App() {
                   rotatingCubesRef.current.splice(index, 1);
                 }
               });
+
               renderer.render(scene, camera);
-              gl.endFrameEXP();
+              gl.endFrameEXP(); // <--- IMPORTANTE: Finalizar frame en Expo
             };
 
             render();

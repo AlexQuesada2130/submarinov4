@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View, Button, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Config } from "../components/configuracionTipos";
-import { Level } from "../components/estrategiaLevels";
+import { configuracionTipos, Config } from "../components/ConfiguracionTipos";
+import { Level } from "../components/EstrategiaLevels";
 
 const config = () => {
   const navigation = useNavigation<any>();
-  const setGlobalConfig = ConfiguracionTipos((state) => state.setConfig);
+  const setGlobalConfig = configuracionTipos((state) => state.setConfig);
 
   const [localConfig, setLocalConfig] = useState<Config>(
     Level.getInstance().crearLevel("Facil")
@@ -164,6 +164,3 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 });
-function ConfiguracionTipos(arg0: (state: any) => any) {
-  throw new Error("Function not implemented.");
-}

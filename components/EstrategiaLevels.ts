@@ -1,4 +1,4 @@
-import { Config } from "./configuracionTipos";
+import { Config } from "./ConfiguracionTipos";
 
 interface DifficultStrategy {
   getSettings(): Config;
