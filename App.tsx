@@ -98,7 +98,7 @@ export default function App() {
             cameraRef.current = camera;
 
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf0f0f0);
+            scene.background = new THREE.Color("#000000");
 
             const gridHelper = new THREE.GridHelper(1000, 20);
             scene.add(gridHelper);
@@ -107,10 +107,10 @@ export default function App() {
             await mySubmarine.loadAsync();
             Submarine.current = mySubmarine;
 
-            const ambientLight = new THREE.AmbientLight(0x606060, 3);
+            const ambientLight = new THREE.AmbientLight("#49bbacff", 3);
             scene.add(ambientLight);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+            const directionalLight = new THREE.DirectionalLight("#9c2d2dff", 3);
             directionalLight.position.set(1, 0.75, 0.5).normalize();
             scene.add(directionalLight);
 
@@ -118,7 +118,7 @@ export default function App() {
               for (let j = 0; j < 10; j++) {
                 const boxGeometry = new THREE.BoxGeometry(55, 55, 55);
                 const MeshBasicMaterial = new THREE.MeshBasicMaterial({
-                  color: "blue",
+                  color: "#16034bff",
                   opacity: 0.8,
                   transparent: true,
                 });
