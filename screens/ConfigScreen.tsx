@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, Button, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Config, ConfiguracionTipos } from "../components/configuracionTipos";
+import { Config } from "../components/configuracionTipos";
 import { Level } from "../components/estrategiaLevels";
 
 const config = () => {
@@ -164,3 +164,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 });
+function ConfiguracionTipos(arg0: (state: any) => any) {
+  throw new Error("Function not implemented.");
+}

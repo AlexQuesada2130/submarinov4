@@ -1,182 +1,45 @@
-import { GLView } from "expo-gl";
-import { StatusBar } from "expo-status-bar";
-import { Renderer, THREE } from "expo-three";
-import { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-  GestureUpdateEvent,
-  PanGestureHandlerEventPayload,
-  TapGestureHandlerEventPayload,
-} from "react-native-gesture-handler";
+import React from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
-import { Submarine } from "./components/submarine";
+// Importa las pantallas que has creado
+import ConfigScreen from "./screens/ConfigScreen";
+import GameScreen from "./screens/JuegoScreen";
 
-interface RotatingCube {
-  object: THREE.Object3D;
-  progress: number; // 0 a 1, controla animación
-  originalRotation: THREE.Euler;
-}
+// 1. Crear el Navegador Stack
+const Stack = createStackNavigator();
+
+// Definición de tipos para las rutas (buena práctica TypeScript)
+export type RootStackParamList = {
+  Config: undefined; // La pantalla inicial no necesita parámetros
+  Game: undefined; // La pantalla de juego tampoco necesita (obtiene config de Zustand)
+};
 
 export default function App() {
-  const [total, setTotal] = useState(0);
-  const cameraRef = useRef<THREE.PerspectiveCamera | any>(null);
-  const clickableObjectsRef = useRef<THREE.Object3D[]>([]);
-  const rotatingCubesRef = useRef<RotatingCube[]>([]);
-
-  const panGesture = Gesture.Pan().onUpdate(
-    (event: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
-      const camera = cameraRef.current;
-      if (!camera) return;
-      const speed = 0.1;
-      camera.position.x -= event.translationX * speed;
-      camera.position.z += event.translationY * speed;
-    }
-  );
-
-  const tapGesture = Gesture.Tap().onEnd(
-    (event: GestureUpdateEvent<TapGestureHandlerEventPayload>) => {
-      const camera = cameraRef.current;
-      const { absoluteX, absoluteY } = event;
-      const x = (absoluteX / window.innerWidth) * 2 - 1;
-      const y = -(absoluteY / window.innerHeight) * 2 + 1;
-
-      const pointerVector = new THREE.Vector2(x, y);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(pointerVector, camera);
-
-      const intersects = raycaster.intersectObjects(
-        clickableObjectsRef.current,
-        true
-      );
-      if (intersects.length > 0) {
-        setTotal(total + 1);
-        const firstIntersectedObject = intersects[0].object;
-
-        //Casteamos los metodos mesh para forzar el uso estricto que nos pide material
-        const mesh = firstIntersectedObject as THREE.Mesh;
-        (mesh.material as THREE.MeshBasicMaterial).color.set(0xff0000);
-
-        rotatingCubesRef.current.push({
-          object: firstIntersectedObject,
-          progress: 0,
-          originalRotation: firstIntersectedObject.rotation.clone(),
-        });
-
-        console.log("Encontrado:", firstIntersectedObject.name);
-      }
-    }
-  );
-
-  const combinedGesture = Gesture.Race(tapGesture, panGesture);
-
   return (
-    <GestureHandlerRootView>
-      <View style={styles.container}>
-        <Text style={{ fontSize: 18, textAlign: "center", marginTop: 40 }}>
-          Toca un cubo para girarlo o arrastra para mover la cámara {total}
-        </Text>
-        <StatusBar style="auto" />
-      </View>
-      <GestureDetector gesture={combinedGesture}>
-        <GLView
-          style={{ flex: 1 }}
-          onContextCreate={async (gl) => {
-            const renderer = new Renderer({ gl }) as any;
-            renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-
-            const camera = new THREE.PerspectiveCamera(
-              45,
-              window.innerWidth / window.innerHeight,
-              1,
-              10000
-            );
-            camera.position.set(0, 1300, 1);
-            camera.lookAt(0, 0, 0);
-            cameraRef.current = camera;
-
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color("#000000");
-
-            const gridHelper = new THREE.GridHelper(1000, 20);
-            scene.add(gridHelper);
-
-            const mySubmarine = new Submarine(scene);
-            await mySubmarine.loadAsync();
-            Submarine.current = mySubmarine;
-
-            const ambientLight = new THREE.AmbientLight("#49bbacff", 3);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight("#9c2d2dff", 3);
-            directionalLight.position.set(1, 0.75, 0.5).normalize();
-            scene.add(directionalLight);
-
-            for (let i = 0; i < 10; i++) {
-              for (let j = 0; j < 10; j++) {
-                const boxGeometry = new THREE.BoxGeometry(55, 55, 55);
-                const MeshBasicMaterial = new THREE.MeshBasicMaterial({
-                  color: "#16034bff",
-                  opacity: 0.8,
-                  transparent: true,
-                });
-
-                const box = new THREE.Mesh(boxGeometry, MeshBasicMaterial);
-                box.position.set(i * 60 - 200, 0, j * 60 - 200);
-                box.name = `Box_${i}_${j}`;
-                scene.add(box);
-                clickableObjectsRef.current.push(box);
-              }
-            }
-
-            const render = () => {
-              requestAnimationFrame(render);
-              if (Submarine.current) {
-                Submarine.current.update();
-              }
-              rotatingCubesRef.current.forEach((cube, index) => {
-                const duration = 20;
-                cube.progress += 1 / duration;
-
-                if (cube.progress < 0.5) {
-                  cube.object.rotation.y =
-                    cube.originalRotation.y + Math.PI * cube.progress * 2;
-                } else if (cube.progress <= 1) {
-                  const t = (cube.progress - 0.5) * 2; // 0 → 1
-                  cube.object.rotation.y = THREE.MathUtils.lerp(
-                    cube.originalRotation.y + Math.PI,
-                    cube.originalRotation.y,
-                    t
-                  );
-                } else {
-                  cube.object.rotation.copy(cube.originalRotation);
-                  rotatingCubesRef.current.splice(index, 1);
-                }
-              });
-              renderer.render(scene, camera);
-              gl.endFrameEXP();
-            };
-
-            render();
+    // 2. Contenedor principal de navegación
+    <NavigationContainer>
+      {/* 3. Definición de las pantallas y configuración */}
+      <Stack.Navigator
+        // 🚨 La pantalla de configuración será la primera en cargarse
+        initialRouteName="Config"
+      >
+        <Stack.Screen
+          name="Config"
+          component={ConfigScreen}
+          options={{
+            title: "Configuración de Misión",
+            headerShown: false, // Ocultamos la barra superior si no es necesaria
           }}
         />
-      </GestureDetector>
-    </GestureHandlerRootView>
+        <Stack.Screen
+          name="Game"
+          component={GameScreen}
+          options={{
+            headerShown: false, // Ocultamos la barra para inmersión 3D
+          }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 130,
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 10,
-    zIndex: 1,
-  },
-});
