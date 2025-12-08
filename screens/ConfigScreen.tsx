@@ -7,7 +7,6 @@ import { Level } from "../components/EstrategiaLevels";
 const ConfigScreen = () => {
   const navigation = useNavigation<any>();
   const setGlobalConfig = ConfiguracionTipos((state) => state.setConfig);
-
   const [localConfig, setLocalConfig] = useState<Config>(
     Level.getInstance().crearLevel("Facil")
   );

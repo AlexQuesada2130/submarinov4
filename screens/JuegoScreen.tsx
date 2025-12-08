@@ -2,7 +2,14 @@ import { GLView } from "expo-gl";
 import { StatusBar } from "expo-status-bar";
 import * as THREE from "three";
 import { useRef, useState } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  LayoutChangeEvent,
+} from "react-native";
 import {
   Gesture,
   GestureDetector,
@@ -25,15 +32,20 @@ interface RotatingCube {
 }
 
 export default function JuegoScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const config = ConfiguracionTipos((state) => state);
   const [disparos, setDisparos] = useState(0);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const inicio = () => {
+    navigation.navigate("Config");
+  };
+  const listaTiros = () => {
+    navigation.navigate("ListaTiros");
+  };
 
   //Colores
-  const COLOR_AGUA = "#001133"; // Azul muy oscuro (Casi negro/marino)
-  const COLOR_DISPARO = "#ff0000"; // Rojo intenso
-  const COLOR_MUERTO = "#333333"; // Gris oscuro (Casilla destruida/humo)
+  const COLOR_AGUA = "#001133";
+  const COLOR_DISPARO = "#ff0000";
+  const COLOR_MUERTO = "#333333";
 
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const clickableObjectsRef = useRef<THREE.Object3D[]>([]);
@@ -83,7 +95,7 @@ export default function JuegoScreen() {
           rotatingCubesRef.current.push({
             object: firstIntersectedObject,
             progress: 0,
-            originalRotation: firstIntersectedObject.rotation.clone(), //Color rastro
+            originalRotation: firstIntersectedObject.rotation.clone(), //Color Agua tras un disparao
             originalColor: material.color.set(COLOR_MUERTO),
           });
         }
@@ -102,116 +114,131 @@ export default function JuegoScreen() {
       </View>
 
       <GestureDetector gesture={combinedGesture}>
-        <GLView
-          style={{ flex: 1 }}
-          onContextCreate={async (gl) => {
-            try {
-              const renderer = new Renderer({ gl });
-              renderer.dispose = () => {};
+        <View style={{ flex: 1, position: "relative" }}>
+          <GLView
+            style={{ flex: 1 }}
+            onContextCreate={async (gl) => {
+              try {
+                const renderer = new Renderer({ gl });
+                renderer.dispose = () => {};
 
-              renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+                renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-              const scene = new THREE.Scene(); //Color de fondo
-              scene.background = new THREE.Color("#000000");
+                const scene = new THREE.Scene(); //Color de fondo
+                scene.background = new THREE.Color("#000000");
 
-              const camera = new THREE.PerspectiveCamera(
-                45,
-                gl.drawingBufferWidth / gl.drawingBufferHeight,
-                1,
-                10000
-              );
-              camera.position.set(0, config.tamanio * 150 + 600, 100);
-              camera.lookAt(0, 0, 0);
-              cameraRef.current = camera;
+                const camera = new THREE.PerspectiveCamera(
+                  45,
+                  gl.drawingBufferWidth / gl.drawingBufferHeight,
+                  0.1,
+                  10000
+                );
+                camera.position.set(0, config.tamanio * 70 + 300, 50);
+                camera.lookAt(0, 0, 0);
+                cameraRef.current = camera;
 
-              const ambientLight = new THREE.AmbientLight("#49bbac", 3);
-              scene.add(ambientLight);
-              const directionalLight = new THREE.DirectionalLight("#9c2d2d", 3);
-              directionalLight.position.set(1, 0.75, 0.5).normalize();
-              scene.add(directionalLight);
+                const ambientLight = new THREE.AmbientLight("#49bbac", 3);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(
+                  "#9c2d2d",
+                  3
+                );
+                directionalLight.position.set(1, 0.75, 0.5).normalize();
+                scene.add(directionalLight);
 
-              const gridHelper = new THREE.GridHelper(2000, 50);
-              scene.add(gridHelper);
+                const gridHelper = new THREE.GridHelper(2000, 50);
+                scene.add(gridHelper);
 
-              clickableObjectsRef.current = [];
-              const boxSize = 55;
-              const gap = 10;
-              const totalSize = boxSize + gap;
-              const offset = (config.tamanio * totalSize) / 2 - totalSize / 2;
+                clickableObjectsRef.current = [];
+                const boxSize = 55;
+                const gap = 10;
+                const totalSize = boxSize + gap;
+                const offset = (config.tamanio * totalSize) / 2 - totalSize / 2;
 
-              for (let i = 0; i < config.tamanio; i++) {
-                for (let j = 0; j < config.tamanio; j++) {
-                  const boxGeometry = new THREE.BoxGeometry(
-                    boxSize,
-                    boxSize,
-                    boxSize
-                  );
-                  const mat = new THREE.MeshBasicMaterial({
-                    //Color de los cubos
-                    color: COLOR_AGUA,
-                    opacity: 0.8,
-                    transparent: true,
-                  });
-                  const box = new THREE.Mesh(boxGeometry, mat);
-                  box.position.set(
-                    i * totalSize - offset,
-                    0,
-                    j * totalSize - offset
-                  );
-                  scene.add(box);
-                  clickableObjectsRef.current.push(box);
-                }
-              }
-
-              const mySubmarine = new Submarine(scene);
-              mySubmarine
-                .loadAsync()
-                .then(() => {
-                  Submarine.current = mySubmarine;
-                })
-                .catch((err) => {
-                  console.error(err);
-                  setErrorMsg("Error cargando 3D");
-                });
-
-              const render = () => {
-                requestAnimationFrame(render);
-
-                if (Submarine.current) {
-                  Submarine.current.update();
-                }
-
-                rotatingCubesRef.current.forEach((cube, index) => {
-                  cube.progress += 0.02;
-                  if (cube.progress <= 1) {
-                    cube.object.rotation.y =
-                      cube.originalRotation.y + Math.PI * cube.progress;
-                    const mesh = cube.object as THREE.Mesh;
-                    (mesh.material as THREE.MeshBasicMaterial).color.lerp(
-                      cube.originalColor,
-                      0.05
+                for (let i = 0; i < config.tamanio; i++) {
+                  for (let j = 0; j < config.tamanio; j++) {
+                    const boxGeometry = new THREE.BoxGeometry(
+                      boxSize,
+                      boxSize,
+                      boxSize
                     );
-                  } else {
-                    cube.object.rotation.copy(cube.originalRotation);
-                    const mesh = cube.object as THREE.Mesh;
-                    (mesh.material as THREE.MeshBasicMaterial).color.set(
-                      cube.originalColor
+                    const mat = new THREE.MeshBasicMaterial({
+                      //Color de los cubos
+                      color: COLOR_AGUA,
+                      opacity: 0.8,
+                      transparent: true,
+                    });
+                    const box = new THREE.Mesh(boxGeometry, mat);
+                    box.position.set(
+                      i * totalSize - offset,
+                      0,
+                      j * totalSize - offset
                     );
-                    rotatingCubesRef.current.splice(index, 1);
+                    scene.add(box);
+                    clickableObjectsRef.current.push(box);
                   }
+                }
+
+                const mySubmarine = new Submarine(scene);
+                mySubmarine.loadAsync().then(() => {
+                  Submarine.current = mySubmarine;
                 });
 
-                renderer.render(scene, camera);
-                gl.endFrameEXP();
-              };
+                const render = () => {
+                  requestAnimationFrame(render);
 
-              render();
-            } catch (e) {
-              console.error("Error fatal en GLView:", e);
-              setErrorMsg("Error iniciando motor 3D");
-            }
-          }}
-        />
+                  if (Submarine.current) {
+                    Submarine.current.update();
+                  }
+
+                  rotatingCubesRef.current.forEach((cube, index) => {
+                    cube.progress += 0.02;
+                    if (cube.progress <= 1) {
+                      cube.object.rotation.y =
+                        cube.originalRotation.y + Math.PI * cube.progress;
+                      const mesh = cube.object as THREE.Mesh;
+                      (mesh.material as THREE.MeshBasicMaterial).color.lerp(
+                        cube.originalColor,
+                        0.05
+                      );
+                    } else {
+                      cube.object.rotation.copy(cube.originalRotation);
+                      const mesh = cube.object as THREE.Mesh;
+                      (mesh.material as THREE.MeshBasicMaterial).color.set(
+                        cube.originalColor
+                      );
+                      rotatingCubesRef.current.splice(index, 1);
+                    }
+                  });
+
+                  renderer.render(scene, camera);
+                  gl.endFrameEXP();
+                };
+
+                render();
+              } catch (e) {
+                console.error("Error fatal en GLView:", e);
+              }
+            }}
+          />
+          <View style={styles.botonesContainer}>
+            {/* Botón para la Lista de Tiros */}
+            <TouchableOpacity
+              style={[styles.boton, { backgroundColor: "#4CAF50" }]} // Verde
+              onPress={listaTiros}
+            >
+              <Text style={styles.textoBoton}>📜 Lista de Tiros</Text>
+            </TouchableOpacity>
+
+            {/* Botón para Volver a Configuración */}
+            <TouchableOpacity
+              style={[styles.boton, { backgroundColor: "#FF9800" }]} // Naranja
+              onPress={inicio}
+            >
+              <Text style={styles.textoBoton}>⚙️ Volver a Configuración</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </GestureDetector>
     </GestureHandlerRootView>
   );
@@ -226,6 +253,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
     pointerEvents: "none",
   },
+
   hudText: {
     color: "white",
     fontSize: 18,
@@ -233,4 +261,22 @@ const styles = StyleSheet.create({
     textShadowColor: "black",
     textShadowRadius: 5,
   },
+
+  botonesContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    backgroundColor: "#111", // Un fondo oscuro para diferenciarlo
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+  },
+
+  boton: {
+    padding: 12,
+    borderRadius: 8,
+    width: "45%",
+    alignItems: "center",
+  },
+  textoBoton: { color: "white", fontWeight: "bold" },
 });

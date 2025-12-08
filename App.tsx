@@ -5,6 +5,7 @@ import ConfigScreen from "./screens/ConfigScreen";
 import JuegoScreen from "./screens/JuegoScreen";
 import { useAssets } from "expo-asset";
 import { ActivityIndicator, View } from "react-native";
+import MovimientosScreen from "./screens/MovimientosScreen";
 
 const Stack = createStackNavigator();
 
@@ -26,17 +27,12 @@ export default function App() {
           name="Config"
           component={ConfigScreen}
           options={{
-            title: "Configuración de Misión",
+            title: "CONFIGURACION",
             headerShown: false,
           }}
         />
-        <Stack.Screen
-          name="JuegoScreen"
-          component={JuegoScreen}
-          options={{
-            headerShown: false,
-          }}
-        />
+        <Stack.Screen name="JuegoScreen" component={JuegoScreen} />
+        <Stack.Screen name="ListaTiros" component={MovimientosScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
