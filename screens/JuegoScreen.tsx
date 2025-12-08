@@ -23,6 +23,8 @@ import { useNavigation } from "@react-navigation/native";
 import { Submarine } from "../components/submarine";
 import { ConfiguracionTipos } from "../components/ConfiguracionTipos";
 import Renderer from "expo-three/build/Renderer";
+// 👇 IMPORTANTE: Asegúrate de que esta ruta es correcta hacia tu archivo del store
+import { useGameStore } from "../context/Context";
 
 interface RotatingCube {
   object: THREE.Object3D;
@@ -34,8 +36,12 @@ interface RotatingCube {
 export default function JuegoScreen() {
   const navigation = useNavigation<any>();
   const config = ConfiguracionTipos((state) => state);
-  const [disparos, setDisparos] = useState(0);
+
+  // 👇 CAMBIO: Usamos el store en lugar de useState local
+  const { disparos, agregarTiro, reiniciarJuego } = useGameStore();
+
   const inicio = () => {
+    reiniciarJuego(); // Reseteamos al salir
     navigation.navigate("Config");
   };
   const listaTiros = () => {
@@ -83,9 +89,21 @@ export default function JuegoScreen() {
       );
 
       if (intersects.length > 0) {
-        setDisparos((prev) => prev + 1);
+        // 👇 CAMBIO: Ya no usamos setDisparos(prev => prev+1)
+        // La función agregarTiro del store ya incrementa el contador internamente.
+
         const firstIntersectedObject = intersects[0].object;
         const mesh = firstIntersectedObject as THREE.Mesh;
+
+        const esBlanco = false; // <--- TU LÓGICA DE JUEGO
+        const resultado = esBlanco ? "Tocado" : "Agua";
+
+        // Calculamos coordenadas del grid (aprox) para guardarlas
+        const gridX = Math.round(firstIntersectedObject.position.x / 65);
+        const gridY = Math.round(firstIntersectedObject.position.z / 65);
+
+        // 👇 CAMBIO: Guardamos en el store global
+        agregarTiro(gridX, gridY, resultado);
 
         if (mesh.material) {
           const material = mesh.material as THREE.MeshBasicMaterial;

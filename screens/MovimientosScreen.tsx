@@ -8,29 +8,18 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-// Si tienes tipos definidos, úsalos, si no, usa estos básicos
-interface Tiro {
-  id: string;
-  coordenada: string;
-  resultado: "Agua" | "Rastro de Submarino" | "Blanco";
-}
-
-// Datos de prueba (O usa tu estado global aquí)
-const historialDeTiros: Tiro[] = [
-  { id: "1", coordenada: "2,2", resultado: "Blanco" },
-  { id: "2", coordenada: "3,8", resultado: "Rastro de Submarino" },
-];
+// 👇 IMPORTANTE: Importamos el store para leer los datos reales
+import { useGameStore } from "../context/Context";
 
 const MovimientosScreen = () => {
   const navigation = useNavigation();
 
-  // 🔴 EL ERROR SOLÍA ESTAR AQUÍ:
-  // Si tenías navigation.setOptions(...) aquí suelto, eso causaba el crash.
+  // 👇 LEEMOS EL HISTORIAL DEL STORE (Ya no usamos datos falsos)
+  const historial = useGameStore((state) => state.historial);
 
-  // ✅ LA SOLUCIÓN: Usar useEffect
   useEffect(() => {
     navigation.setOptions({
-      title: "Historial de Tiros", // O cualquier configuración que necesites
+      title: "Historial de Tiros",
     });
   }, [navigation]);
 
@@ -38,15 +27,21 @@ const MovimientosScreen = () => {
     navigation.goBack();
   };
 
-  const renderItem = ({ item }: { item: Tiro }) => {
+  const renderItem = ({ item }: { item: any }) => {
+    // Colores por defecto (Agua)
     let color = "#007bff";
     let emoji = "💧";
-    if (item.resultado === "Blanco") {
-      color = "#28a745";
+
+    // Lógica de colores según el resultado que guardaste en el store
+    if (item.resultado === "Tocado" || item.resultado === "Blanco") {
+      color = "#28a745"; // Verde (Acierto)
       emoji = "💥";
     } else if (item.resultado === "Rastro de Submarino") {
-      color = "#ffc107";
+      color = "#ffc107"; // Amarillo
       emoji = "🟡";
+    } else if (item.resultado === "Hundido") {
+      color = "#dc3545"; // Rojo
+      emoji = "☠️";
     }
 
     return (
@@ -60,14 +55,17 @@ const MovimientosScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>📜 Historial</Text>
+      {/* Mostramos cuántos tiros llevamos en el título */}
+      <Text style={styles.titulo}>📜 Historial ({historial.length})</Text>
 
       <FlatList
-        data={historialDeTiros}
+        data={historial}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListEmptyComponent={
-          <Text style={{ textAlign: "center" }}>No hay tiros aún.</Text>
+          <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
+            No hay tiros aún. ¡Ve a jugar!
+          </Text>
         }
       />
 
