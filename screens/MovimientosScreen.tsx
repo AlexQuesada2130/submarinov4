@@ -7,14 +7,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-
-// 👇 IMPORTANTE: Importamos el store para leer los datos reales
 import { useGameStore } from "../context/Context";
 
 const MovimientosScreen = () => {
   const navigation = useNavigation();
-
-  // 👇 LEEMOS EL HISTORIAL DEL STORE (Ya no usamos datos falsos)
   const historial = useGameStore((state) => state.historial);
 
   useEffect(() => {
@@ -28,26 +24,22 @@ const MovimientosScreen = () => {
   };
 
   const renderItem = ({ item }: { item: any }) => {
-    // Colores por defecto (Agua)
+    // Colores por defecto
     let color = "#007bff";
-    let emoji = "💧";
 
     // Lógica de colores según el resultado que guardaste en el store
     if (item.resultado === "Tocado" || item.resultado === "Blanco") {
-      color = "#28a745"; // Verde (Acierto)
-      emoji = "💥";
+      color = "#28a745";
     } else if (item.resultado === "Rastro de Submarino") {
-      color = "#ffc107"; // Amarillo
-      emoji = "🟡";
+      color = "#ffc107";
     } else if (item.resultado === "Hundido") {
-      color = "#dc3545"; // Rojo
-      emoji = "☠️";
+      color = "#dc3545";
     }
 
     return (
       <View style={styles.movimientoItem}>
         <Text style={[styles.movimientoTexto, { color }]}>
-          {emoji} {item.resultado} ({item.coordenada})
+          {item.resultado} ({item.coordenada})
         </Text>
       </View>
     );
@@ -56,7 +48,7 @@ const MovimientosScreen = () => {
   return (
     <View style={styles.container}>
       {/* Mostramos cuántos tiros llevamos en el título */}
-      <Text style={styles.titulo}>📜 Historial ({historial.length})</Text>
+      <Text style={styles.titulo}>Historial de Tiros({historial.length})</Text>
 
       <FlatList
         data={historial}
@@ -64,7 +56,7 @@ const MovimientosScreen = () => {
         renderItem={renderItem}
         ListEmptyComponent={
           <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
-            No hay tiros aún. ¡Ve a jugar!
+            No hay tiros aún.
           </Text>
         }
       />

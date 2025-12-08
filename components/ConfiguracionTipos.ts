@@ -8,7 +8,6 @@ export interface Config {
 
 interface GameState extends Config {
   setConfig: (configuracion: Config) => void;
-  //resetGame: () => void;
 }
 
 export const ConfiguracionTipos = create<GameState>((set) => ({

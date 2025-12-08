@@ -51,10 +51,10 @@ const ConfigScreen = () => {
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Resumen del Nivel</Text>
         <Text style={styles.infoText}>
-          📏 Tamaño Tablero: {localConfig.tamanio}x{localConfig.tamanio}
+          Tamaño Tablero: {localConfig.tamanio}x{localConfig.tamanio}
         </Text>
         <Text style={styles.infoText}>
-          👀 Rastro Visible: {localConfig.trail} casillas
+          Rastro Visible: {localConfig.trail} casillas
         </Text>
       </View>
       <TouchableOpacity style={styles.startButton} onPress={startGame}>

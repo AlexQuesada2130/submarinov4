@@ -7,6 +7,7 @@ export class Submarine {
   private scene: THREE.Scene;
   private localUri: any;
   static current: Submarine | null = null;
+  position: any;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
@@ -61,8 +62,6 @@ export class Submarine {
       // Animación suave de flotación
       const time = Date.now() * 0.002;
       this.mesh.position.y = Math.sin(time) * 5; // Flota entre -5 y 5
-      // Rotación suave para ver que está vivo
-      this.mesh.rotation.y += 0.005;
     }
   }
 

@@ -15,7 +15,7 @@ export default function App() {
   if (!assets) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#00ff9dff" />
       </View>
     );
   }
@@ -28,7 +28,6 @@ export default function App() {
           component={ConfigScreen}
           options={{
             title: "CONFIGURACION",
-            headerShown: false,
           }}
         />
         <Stack.Screen name="JuegoScreen" component={JuegoScreen} />
